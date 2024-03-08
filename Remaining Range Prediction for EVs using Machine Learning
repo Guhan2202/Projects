@@ -1,0 +1,528 @@
+#Importing the Libraries and data
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+%matplotlib inline
+from numpy import asarray
+from sklearn.preprocessing import OrdinalEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression, Ridge, RidgeCV, Lasso, LassoCV
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+
+# Import the CSV file 
+# Print the Top five rows of the dataset
+ev = pd.read_csv('ElectricCarData_Clean.csv')
+ev.head()
+
+#Check available features
+ev.columns
+
+#Full summary of the dataset
+ev.info()
+
+#Check the number of rows and columns
+ev.shape
+
+#Check missing value
+ev.isnull().sum()
+
+#Check data type of each column
+ev.dtypes
+
+#Check the unique values of the dataset
+ev.nunique()
+
+#Descriptive Statistics of the dataset
+ev.describe()
+
+#Analysis range by EV Brand
+ax= plt.figure(figsize=(20,5))
+sns.barplot(x='Brand',y='Range_Km',data=ev,palette='hls')
+plt.grid(axis='y')
+plt.title('Electric Vehicle Range VS EV Brand')
+plt.xlabel('Brand')
+plt.ylabel('Range per Km')
+plt.xticks(rotation=45)
+
+Model with highest Range
+
+range_df = ev.sort_values(by=['Range_Km'], ascending=False)
+range_df[['Brand','Model','Range_Km']].head(n=1)
+
+
+#Analysis acceleration by EV Brand
+ax= plt.figure(figsize=(20,5))
+sns.barplot(x='Brand',y='AccelSec',data=ev,palette='coolwarm')
+plt.grid(axis='y')
+plt.title('Electric Vehicle Acceleration VS EV Brand')
+plt.xlabel('Brand')
+plt.ylabel('AccelSec')
+plt.xticks(rotation=45)
+
+df = ev.sort_values(by=['AccelSec'], ascending=True)
+df[['Brand','Model','AccelSec']].head(n=1)
+
+
+#Analysis top speed by EV Brand
+ax= plt.figure(figsize=(20,5))
+sns.barplot(x='Brand',y='TopSpeed_KmH',data=ev,palette='husl')
+plt.grid(axis='y')
+plt.title('Electric Vehicle Top Speed VS EV Brand')
+plt.xlabel('Brand')
+plt.ylabel('TopSpeed_KmH')
+plt.xticks(rotation=45)
+
+
+speed_df = ev.sort_values(by=['TopSpeed_KmH'], ascending=False)
+speed_df[['Brand','Model','TopSpeed_KmH']].head(n=1)
+
+
+#Analysis efficiency by EV Brand
+ax= plt.figure(figsize=(20,5))
+sns.barplot(x='Brand',y='Efficiency_WhKm',data=ev,palette='Paired')
+plt.grid(axis='y')
+plt.title('Electric Vehicle efficiency VS EV Brand')
+plt.xlabel('Brand')
+plt.ylabel('Efficiency_WhKm')
+plt.xticks(rotation=45)
+
+
+Model with maximum Efficiency
+
+eff_df = ev.sort_values(by=['Efficiency_WhKm'], ascending=False)
+eff_df[['Brand','Model','Efficiency_WhKm']].head(n=1)
+
+
+seat_df = ev.sort_values(by=['Seats'], ascending=False)
+seat_df[['Brand','Model','Range_Km', 'Seats']].head(n=1)
+
+
+##Distribution of range with PowerTrain
+fig, axs = plt.subplots(1,2)
+sns.catplot(x="PowerTrain", y="Range_Km", data=ev)
+plt.close(1)
+
+ Encoding categorical data
+
+
+ev.columns
+
+ev1 = ev[['Brand', 'Model', 'PowerTrain', 'RapidCharge', 'PlugType', 'BodyStyle', 'Segment']]
+
+
+print(ev1)
+
+# define ordinal encoding
+encoder = OrdinalEncoder()
+
+# transform data
+result = encoder.fit_transform(ev1)
+print(result)
+
+temp = ['Brand', 'Model', 'PowerTrain', 'RapidCharge', 'PlugType', 'BodyStyle', 'Segment']
+ev.drop(temp,axis=1,inplace=True)
+result = pd.DataFrame(result)
+result.columns=["Brand", "Model", "PowerTrain", 'RapidCharge', "PlugType", "BodyStyle", "Segment"]
+result.index+=1
+result
+
+ev1 = ev
+ev1.index+=1
+
+ev1[['Brand', 'Model', 'PowerTrain', 'RapidCharge', 'PlugType', 'BodyStyle', 'Segment']] = result[['Brand', 'Model', 'PowerTrain', 'RapidCharge', 'PlugType', 'BodyStyle', 'Segment']]
+ev
+
+#Check correlation between different features
+ev.corr()
+
+
+
+#Pairplot show the correlation of the data
+sns.pairplot(ev,
+             corner = True,
+             kind = 'scatter',
+             hue = 'Range_Km')
+plt.show()
+
+
+
+#Heatmap to show the correlation of the data
+ax= plt.figure(figsize=(15,8))
+sns.heatmap(ev.corr(),linewidths=1,linecolor='white',annot=True)
+
+Feature Selection
+
+#Define the target value(dependant variable) as y
+X = ev['TopSpeed_KmH'].values.reshape(-1,1)
+y = ev['Range_Km']
+
+Using Linear Regression Create a Model
+
+#Training and Test Data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
+
+## Check Shape, Sample of Test Train Data
+print("X_train : ",X_train.shape)
+
+print("X_test : ",X_test.shape)
+
+print("y_train : ",y_train.shape)
+
+print("y_test : ",y_test.shape
+
+
+
+# Create Linear Model
+lr = LinearRegression()
+
+#Model Fitting
+lr.fit(X_train, y_train)
+
+#We can output a prediction
+y_pred = lr.predict(X_test)
+y_pred[0:5]
+
+
+
+#Predict the range of this EV using linear regression model.
+
+# TopSpeed_Kmh = 248
+
+EV_pred = lr.predict([[248]])
+print(EV_pred)
+
+# Check Coefficient
+lr.coef_
+
+#Check intercept
+lr.intercept_
+
+width = 12
+height = 10
+plt.figure(figsize=(width, height))
+sns.regplot(x="TopSpeed_KmH", y="Range_Km", data=ev)
+plt.ylim(0,)
+
+ax1 = sns.kdeplot(y_test, color="r", label="Actual Value")
+sns.kdeplot(y_pred, color="b", label="Fitted Values", ax=ax1)
+plt.title('Actual vs Fitted value for Range')
+plt.xlabel('Range(in Km)')
+plt.ylabel('Proportion of Cars')
+plt.show()
+plt.close()
+
+
+ Model Evaluation (Regression Metrics)
+
+# Calculate the score for Training Data
+lr.score(X_train, y_train)
+print("R2 for Traing Data: ", lr.score(X_train, y_train)
+
+
+# Calculate the score (R^2 for Regression) for Testing Data
+lr.score(X_test, y_test)
+print("R2 for Testing Data: ", lr.score(X_test, y_test))
+
+#Calculate Mean Squared Error
+mean_squared_error(y_test, y_pred)
+print("MSE: ", mean_squared_error(y_test, y_pred))
+
+#Calculate Mean Absolute Error(MAE)
+mean_absolute_error(y_test, y_pred)
+print("MAE: ",mean_absolute_error(y_test, y_pred))
+
+#Calculate Root Mean Squared Error(RMSE)
+
+print("RMSE: ",np.sqrt(mean_squared_error(y_test,y_pred)))
+
+
+Use Forward Feature Selection to pick a good model
+
+# Predictors
+X = ev[['TopSpeed_KmH','Efficiency_WhKm','Segment','Seats','AccelSec','PriceEuro']]
+
+# Target
+y = ev['Range_Km']
+
+## Create training and testing subsets
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
+
+## Flag intermediate output
+
+show_steps = True   # for testing/debugging
+# show_steps = False  # without showing steps
+
+# Use Forward Feature Selection to pick a good model
+
+# start with no predictors
+included = []
+# keep track of model and parameters
+best = {'feature': '', 'r2': 0, 'a_r2': 0}
+# create a model object to hold the modelling parameters
+model = LinearRegression()
+# get the number of cases in the training data
+n = X_train.shape[0]
+
+r2_list = []
+adjusted_r2_list = []
+
+while True:
+    changed = False
+    
+    if show_steps:
+        print('') 
+
+    # list the features to be evaluated
+    excluded = list(set(X.columns) - set(included))
+    
+    if show_steps:
+        print('(Step) Excluded = %s' % ', '.join(excluded))  
+
+    # for each remaining feature to be evaluated
+    for new_column in excluded:
+        
+        if show_steps:
+            print('(Step) Trying %s...' % new_column)
+            print('(Step) - Features = %s' % ', '.join(included + [new_column]))
+
+        # fit the model with the Training data
+        fit = model.fit(X_train[included + [new_column]], y_train)
+        # calculate the score (R^2 for Regression)
+        r2 = fit.score(X_train[included + [new_column]], y_train)
+        
+        # number of predictors in this model
+        k = len(included) + 1
+        # calculate the adjusted R^2
+        adjusted_r2 = 1 - ( ( (1 - r2) * (n - 1) ) / (n - k - 1) )
+        
+        if show_steps:
+            print('(Step) - Adjusted R^2: This = %.3f; Best = %.3f' % 
+                  (adjusted_r2, best['a_r2']))
+
+        # if model improves
+        if adjusted_r2 > best['a_r2']:
+            # record new parameters
+            best = {'feature': new_column, 'r2': r2, 'a_r2': adjusted_r2}
+            # flag that found a better model
+            changed = True
+            if show_steps:
+                print('(Step) - New Best!   : Feature = %s; R^2 = %.3f; Adjusted R^2 = %.3f' % 
+                      (best['feature'], best['r2'], best['a_r2']))
+    # END for
+    
+    r2_list.append(best['r2'])
+    adjusted_r2_list.append(best['a_r2'])
+
+    # if found a better model after testing all remaining features
+    if changed:
+        # update control details
+        included.append(best['feature'])
+        excluded = list(set(excluded) - set(best['feature']))
+        print('Added feature %-4s with R^2 = %.3f and adjusted R^2 = %.3f' % 
+              (best['feature'], best['r2'], best['a_r2']))
+    else:
+        # terminate if no better model
+        print('*'*50)
+        break
+
+print('')
+print('Resulting features:')
+print(', '.join(included))
+
+## Display both R^2 and Adjusted R^2
+
+_range = range(1, len(r2_list)+1)
+
+# define chart size
+plt.figure(figsize = (10, 5))
+# plot each metric 
+plt.plot(_range, r2_list, label = '$R^2$')
+plt.plot(_range, adjusted_r2_list, label = '$Adjusted \: R^2$')
+# add some better visualisation
+plt.xlabel('Number of Features')
+plt.legend()
+# output the chart
+plt.show()
+
+#Create a Base Model Using Linear Regression
+model = LinearRegression()
+# Fit
+model.fit(X,y)
+
+# Check Coeffiricent
+model.coef_
+
+def view_coeff(X, model):
+    model_coefs = pd.DataFrame({'variable': X.columns,
+                                'coef': model.coef_,
+                                'abs_coef': np.abs(model.coef_)})
+    model_coefs.sort_values('abs_coef', inplace=True, ascending=False)
+    sns.barplot(x="coef", y="variable", data=model_coefs)
+# Plot Coefficients
+view_coeff(X, model)
+
+
+Calculate Ridge Regression model
+
+## Calculate Ridge Regression model
+
+# create a model object to hold the modelling parameters
+ridgemodel = Ridge()
+
+# keep track of the intermediate results for coefficients and errors
+coefs = []
+errors = []
+
+# create a range of alphas to calculate
+ridge_alphas = np.logspace(-6, 6, 200) #lambda in the slides
+
+# Train the model with different regularisation strengths
+for a in ridge_alphas:
+    ridgemodel.set_params(alpha = a)
+    ridgemodel.fit(X, y)
+    coefs.append(ridgemodel.coef_)
+    errors.append(mean_squared_error(ridgemodel.coef_, model.coef_))
+
+# Display results
+plt.figure(figsize = (20, 6))
+
+plt.subplot(121)
+ax = plt.gca()
+ax.plot(ridge_alphas, coefs)
+ax.set_xscale('log')
+plt.xlabel('alpha')
+plt.ylabel('weights')
+plt.title('Ridge coefficients as a function of the regularisation')
+plt.axis('tight')
+
+plt.subplot(122)
+ax = plt.gca()
+ax.plot(ridge_alphas, errors)
+ax.set_xscale('log')
+plt.xlabel('alpha')
+plt.ylabel('error')
+plt.title('Coefficient error as a function of the regularisation')
+plt.axis('tight')
+
+plt.show()
+
+optimal_ridge = RidgeCV(alphas=ridge_alphas, cv=10)
+optimal_ridge.fit(X, y)
+print('Alpha:', optimal_ridge.alpha_)
+print('Score:', optimal_ridge.score(X, y))
+
+optimal_ridge.coef_
+
+# Plot Coefficient
+view_coeff(X, optimal_ridge)
+
+rr = Ridge(alpha=0.01)
+rr.fit(X_train, y_train) 
+pred_train_rr= rr.predict(X_train)
+print(np.sqrt(mean_squared_error(y_train,pred_train_rr)))
+print(r2_score(y_train, pred_train_rr))
+
+pred_test_rr= rr.predict(X_test)
+print(np.sqrt(mean_squared_error(y_test,pred_test_rr))) 
+print(r2_score(y_test, pred_test_rr))
+
+Calculate Lasso Regression model
+
+## Calculate Lasso Regression model
+
+# create a model object to hold the modelling parameters
+lassomodel = Lasso()
+
+# keep track of the intermediate results for coefficients and errors
+coefs = []
+errors = []
+
+# create a range of alphas to calculate
+lasso_alphas = np.logspace(-6, 6, 200) #lambda in the slides
+
+# Train the model with different regularisation strengths
+for a in lasso_alphas:
+    lassomodel.set_params(alpha = a)
+    lassomodel.fit(X, y)
+    coefs.append(lassomodel.coef_)
+    errors.append(mean_squared_error(lassomodel.coef_, model.coef_))
+
+# Display results
+plt.figure(figsize = (20, 6))
+
+plt.subplot(121)
+ax = plt.gca()
+ax.plot(lasso_alphas, coefs)
+ax.set_xscale('log')
+plt.xlabel('alpha')
+plt.ylabel('weights')
+plt.title('Ridge coefficients as a function of the regularisation')
+plt.axis('tight')
+
+plt.subplot(122)
+ax = plt.gca()
+ax.plot(lasso_alphas, errors)
+ax.set_xscale('log')
+plt.xlabel('alpha')
+plt.ylabel('error')
+plt.title('Coefficient error as a function of the regularisation')
+plt.axis('tight')
+
+plt.show()
+
+# Find Optimal Lasso Using LassoCV
+
+# create a model object to hold the modelling parameters
+optimal_lasso = LassoCV(alphas=lasso_alphas, cv=10)
+
+optimal_lasso.fit(X, y)
+print('Alpha:', optimal_lasso.alpha_)
+print('Score:', optimal_lasso.score(X, y))
+
+optimal_lasso.coef_
+
+# Plot Coefficient
+view_coeff(X, optimal_lasso)
+
+model_lasso = Lasso(alpha=0.01)
+model_lasso.fit(X_train, y_train) 
+pred_train_lasso= model_lasso.predict(X_train)
+print(np.sqrt(mean_squared_error(y_train,pred_train_lasso)))
+print(r2_score(y_train, pred_train_lasso))
+
+pred_test_lasso= model_lasso.predict(X_test)
+print(np.sqrt(mean_squared_error(y_test,pred_test_lasso))) 
+print(r2_score(y_test, pred_test_lasso))
+
+# Ridge model residuals
+optimal_ridge.fit(X_train, y_train)
+prediction = optimal_ridge.predict(X_test)
+residual_ridge = (y_test - prediction)
+print(residual_ridge)
+
+# Lasso model residuals
+optimal_lasso.fit(X_train, y_train)
+prediction = optimal_lasso.predict(X_test)
+residual_lasso = (y_test - prediction)
+print(residual_lasso)
+
+
+
+# Jointplot
+
+sns.jointplot(data=ev, x=residual_lasso, y=residual_ridge, kind = 'scatter')
+
+
+
+
+
+
+
+
+
+
+
+
